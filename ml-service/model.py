@@ -1,32 +1,18 @@
 import numpy as np
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import LSTM, Dense
+from sklearn.linear_model import LinearRegression
 
 def predict_prices(prices):
     prices = np.array(prices)
 
-    X, y = [], []
-    for i in range(len(prices)-3):
-        X.append(prices[i:i+3])
-        y.append(prices[i+3])
+    if len(prices) < 3:
+        return [float(prices[-1])] * 7
 
-    X = np.array(X).reshape(-1,3,1)
-    y = np.array(y)
+    X = np.arange(len(prices)).reshape(-1, 1)
+    y = prices
 
-    model = Sequential([
-        LSTM(50, activation='relu', input_shape=(3,1)),
-        Dense(1)
-    ])
+    model = LinearRegression()
+    model.fit(X, y)
 
-    model.compile(optimizer='adam', loss='mse')
-    model.fit(X, y, epochs=50, verbose=0)
+    future = np.arange(len(prices), len(prices)+7).reshape(-1, 1)
 
-    last = prices[-3:].reshape(1,3,1)
-
-    preds = []
-    for _ in range(7):
-        p = model.predict(last, verbose=0)[0][0]
-        preds.append(float(p))
-        last = np.append(last[:,1:,:], [[[p]]], axis=1)
-
-    return preds
+    return model.predict(future).tolist()
